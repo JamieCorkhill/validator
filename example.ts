@@ -77,5 +77,5 @@ createUserCommandValidator({
   username: 'jdoe',
   emailAddress: 'j@d.com',
   password: 'abc-123',
-  age: 16,
+  age: 100,
 })
