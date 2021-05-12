@@ -1,0 +1,26 @@
+{
+  "name": "validator",
+  "version": "1.0.0",
+  "description": "A simple, minimal, and expressive validation library that relies on functional composition.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JamieCorkhill/validator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JamieCorkhill/validator/issues"
+  },
+  "homepage": "https://github.com/JamieCorkhill/validator#readme",
+  "dependencies": {
+    "typescript": "^4.2.4"
+  }
+}
