@@ -2,17 +2,18 @@ import { IHasIncludes, IHasLength, Type } from '../types'
 import { value } from '../main'
 import { not, andWhenMapped } from './modifiers'
 import { toIndexOf, toLength } from './../mappers/mappers'
+import { withDefaultMessage } from '../utils/utils'
 
 /**
  * A function that returns a validator context.
  */
-export type ValidationFunction<T> = (candidate: T) => IValidatorContext;
+export type ValidatorFunction<T> = (candidate: T) => IValidatorContext
 
 /**
  * A function that performs validation on a candidate and returns a 
  * boolean indicating the validation result.
  */
-export type ValidationPredicate<T> = (candidate: T) => boolean
+export type ValidatorPredicate<T> = (candidate: T) => boolean
 
 /**
  * Context for a validation function.
@@ -22,43 +23,28 @@ export interface IValidatorContext {
   satisfiesCondition: boolean
 }
 
-export type OtherwiseFunction = (message: string) => string
-
-export function otherwise(message: string) {
-  return message
-}
-
-export function makeValidatorContext<T>(
-  predicate: ValidationPredicate<T>, 
+/**
+ * Constructs a validator context for the given predicate and message.
+ */
+export function makeValidatorFunction<T>(
+  predicate: ValidatorPredicate<T>, 
   makeMessage: (candidate: T) => string
-): ValidationFunction<T> {
+): ValidatorFunction<T> {
   return (candidate: T) => ({
     message: makeMessage(candidate),
     satisfiesCondition: predicate(candidate)
   })
 }
 
-function withDefaultMessage(defaultMessage: string, provided?: string) {
-  return provided || defaultMessage
-}
-
-function stringify<T>(value: T) {
-  return `${value}`
-}
-
-function makeGeneralMessage(expected: any, received: any) {
-  return `Expected value ${expected}, but received value ${received}`
-}
-
 /**
  * Verifies that the value is null or empty. It must be one of the following:
  * null, undefined, an empty string, an empty object.
  */
-export function beNullOrEmpty<T>(message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function beNullOrEmpty<T>(message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => !candidate,
     (candidate) => withDefaultMessage(
-      `Expected a null or empty value, but found value ${stringify(candidate)}`,
+      `Expected a null or empty value, but found value ${candidate}`,
       message
     )
   )
@@ -67,11 +53,11 @@ export function beNullOrEmpty<T>(message?: string): ValidationFunction<T> {
 /**
  * Verifies that the value is null.
  */
-export function beNull<T>(message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function beNull<T>(message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => candidate == null,
     (candidate) => withDefaultMessage(
-      `Expected a null value, but found value ${stringify(candidate)}`,
+      `Expected a null value, but found value ${candidate}`,
       message
     )
   )
@@ -80,8 +66,8 @@ export function beNull<T>(message?: string): ValidationFunction<T> {
 /**
  * Verifies that the value is undefined.
  */
-export function beUndefined<T>(message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function beUndefined<T>(message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => candidate == undefined,
     (candidate) => withDefaultMessage(
       `Expected an undefined value, but found value ${candidate}`,
@@ -95,7 +81,7 @@ export function beUndefined<T>(message?: string): ValidationFunction<T> {
  * value is a string or an object with no properties if the value
  * is an object.
  */
-export function beEmpty<T extends { [key: string]: any }>(message?: string): ValidationFunction<T> {
+export function beEmpty<T extends { [key: string]: any }>(message?: string): ValidatorFunction<T> {
   function predicate(candidate: T) {
     if (typeof candidate === 'string' && candidate === '') {
       return true
@@ -108,7 +94,7 @@ export function beEmpty<T extends { [key: string]: any }>(message?: string): Val
     return false
   }
 
-  return makeValidatorContext(
+  return makeValidatorFunction(
     predicate,
     _ => withDefaultMessage(
       'Expected an empty value, but the provided value was not empty',
@@ -123,8 +109,8 @@ export function beEmpty<T extends { [key: string]: any }>(message?: string): Val
  * @param expectedType 
  * The expected type for the value.
  */
-export function beOfType<T>(expectedType: Type, message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function beOfType<T>(expectedType: Type, message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => typeof candidate === expectedType,
     (candidate) => withDefaultMessage(
       `Expected a type of ${expectedType}, but found a type of ${typeof candidate}`,
@@ -139,8 +125,8 @@ export function beOfType<T>(expectedType: Type, message?: string): ValidationFun
  * @param expectedValue 
  * Expected value with which to perform a lose equality check.
  */
-export function equal<T>(expectedValue: T, message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function equal<T>(expectedValue: T, message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => candidate == expectedValue,
     (candidate) => withDefaultMessage(
       `Expected loose equality with ${expectedValue}, but found ${candidate}`,
@@ -157,8 +143,8 @@ export function equal<T>(expectedValue: T, message?: string): ValidationFunction
  * @param expectedValue 
  * Expected value with which to perform a strict equality (reference) check. 
  */
-export function strictlyEqual<T>(expectedValue: T, message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function strictlyEqual<T>(expectedValue: T, message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => value(candidate)
       .must(be(expectedValue))
       .flatten(),
@@ -177,7 +163,7 @@ export function strictlyEqual<T>(expectedValue: T, message?: string): Validation
  * @param expectedValue 
  * Expected value with which to perform a strict equality (reference) check. 
  */
-export function be<T>(expectedValue: T, message?: string): ValidationFunction<T> {
+export function be<T>(expectedValue: T, message?: string): ValidatorFunction<T> {
   return strictlyEqual(expectedValue, message)
 }
 
@@ -187,8 +173,8 @@ export function be<T>(expectedValue: T, message?: string): ValidationFunction<T>
  * @param expectedLength 
  * Length to check.
  */
-export function haveLength<T extends IHasLength>(expectedLength: number): ValidationFunction<T> {
-  return makeValidatorContext(
+export function haveLength<T extends IHasLength>(expectedLength: number): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => value(candidate)
       .must(
         haveProperty('length'),
@@ -217,8 +203,8 @@ export function haveLengthInclusivelyBetween<T extends IHasLength>(
   min: number, 
   max: number,
   message?: string
-): ValidationFunction<T> {
-  return makeValidatorContext(
+): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => value(candidate)
       .must(
         haveProperty('length'),
@@ -248,8 +234,8 @@ export function haveLengthExclusivelyBetween<T extends IHasLength>(
   min: number, 
   max: number,
   message?: string
-): ValidationFunction<T> {
-  return makeValidatorContext(
+): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => value(candidate)
       .must(
         haveProperty('length'),
@@ -272,8 +258,8 @@ export function haveLengthExclusivelyBetween<T extends IHasLength>(
  * @param min 
  * The minimum that the value can have.
  */
-export function haveMinimumLength<T extends IHasLength>(min: number, message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function haveMinimumLength<T extends IHasLength>(min: number, message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => value(candidate)
       .must(
         haveProperty('length'),
@@ -296,8 +282,8 @@ export function haveMinimumLength<T extends IHasLength>(min: number, message?: s
  * @param min 
  * The maximum length that the value can have.
  */
-export function haveMaximumLength<T extends IHasLength>(max: number, message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function haveMaximumLength<T extends IHasLength>(max: number, message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => value(candidate)
       .must(
         haveProperty('length'),
@@ -320,8 +306,8 @@ export function haveMaximumLength<T extends IHasLength>(max: number, message?: s
  * @param upperLimit 
  * The (exclusive) maximum the value can be.
  */
-export function beLessThan(upperLimit: number, message?: string): ValidationFunction<number> {
-  return makeValidatorContext(
+export function beLessThan(upperLimit: number, message?: string): ValidatorFunction<number> {
+  return makeValidatorFunction(
     (candidate) => candidate < upperLimit,
     (candidate) => withDefaultMessage(
       `The value ${candidate} is greater than the upper limit specified`,
@@ -336,8 +322,8 @@ export function beLessThan(upperLimit: number, message?: string): ValidationFunc
  * @param upperLimit 
  * The (inclusive) maximum the value can be.
  */
-export function beLessThanOrEqualTo(upperLimit: number, message?: string): ValidationFunction<number> {
-  return makeValidatorContext(
+export function beLessThanOrEqualTo(upperLimit: number, message?: string): ValidatorFunction<number> {
+  return makeValidatorFunction(
     (candidate) => candidate <= upperLimit,
     (candidate) => withDefaultMessage(
       `The value ${candidate} is greater than the upper limit specified`,
@@ -352,8 +338,8 @@ export function beLessThanOrEqualTo(upperLimit: number, message?: string): Valid
  * @param lowerLimit 
  * The (exclusive) minimum the value can be.
  */
-export function beGreaterThan(lowerLimit: number, message?: string): ValidationFunction<number> {
-  return makeValidatorContext(
+export function beGreaterThan(lowerLimit: number, message?: string): ValidatorFunction<number> {
+  return makeValidatorFunction(
     (candidate) => candidate > lowerLimit,
     (candidate) => withDefaultMessage(
       `The value ${candidate} is less than the lower limit specified`,
@@ -368,8 +354,8 @@ export function beGreaterThan(lowerLimit: number, message?: string): ValidationF
  * @param lowerLimit 
  * The (inclusive) minimum the value can be.
  */
-export function beGreaterThanOrEqualTo(lowerLimit: number, message?: string): ValidationFunction<number> {
-  return makeValidatorContext(
+export function beGreaterThanOrEqualTo(lowerLimit: number, message?: string): ValidatorFunction<number> {
+  return makeValidatorFunction(
     (candidate) => candidate >= lowerLimit,
     (candidate) => withDefaultMessage(
       `The value ${candidate} is less than the lower limit specified`,
@@ -386,7 +372,7 @@ export function beGreaterThanOrEqualTo(lowerLimit: number, message?: string): Va
  * @param predicate 
  * A custom predicate function for assertions.
  */
-export function must<T>(predicate: (value: T) => boolean, message?: string): ValidationFunction<T> {
+export function must<T>(predicate: (value: T) => boolean, message?: string): ValidatorFunction<T> {
   return satisfy(predicate, message)
 }
 
@@ -398,8 +384,8 @@ export function must<T>(predicate: (value: T) => boolean, message?: string): Val
  * @param predicate 
  * A custom predicate function for assertions.
  */
-export function satisfy<T>(predicate: (value: T) => boolean, message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function satisfy<T>(predicate: (value: T) => boolean, message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     predicate,
     (candidate) => withDefaultMessage(
       `The value ${candidate} did not satisfy the predicate`,
@@ -414,8 +400,8 @@ export function satisfy<T>(predicate: (value: T) => boolean, message?: string): 
  * @param regex 
  * The Regular Expression to verify against.
  */
-export function match(regex: RegExp, message?: string): ValidationFunction<string> {
-  return makeValidatorContext(
+export function match(regex: RegExp, message?: string): ValidatorFunction<string> {
+  return makeValidatorFunction(
     (candidate) => regex.test(candidate),
     (candidate) => withDefaultMessage(
       `Expected ${candidate} to satisfy the Regular Expression, but it did not`,
@@ -427,8 +413,8 @@ export function match(regex: RegExp, message?: string): ValidationFunction<strin
 /**
  * Verifies that a value is an email address.
  */
-export function beEmailAddress(message?: string): ValidationFunction<string> {
-  return makeValidatorContext(
+export function beEmailAddress(message?: string): ValidatorFunction<string> {
+  return makeValidatorFunction(
     (candidate) => value(candidate)
       .must(
         beOfType('string'),
@@ -452,8 +438,8 @@ export function beEmailAddress(message?: string): ValidationFunction<string> {
 /**
  * Verifies that the value is a valid UUID/GUID.
  */
-export function beUuid(message?: string): ValidationFunction<string> {
-  return makeValidatorContext(
+export function beUuid(message?: string): ValidatorFunction<string> {
+  return makeValidatorFunction(
     (candidate) => value(candidate)
       .must(match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i))
       .flatten(),
@@ -470,8 +456,8 @@ export function beUuid(message?: string): ValidationFunction<string> {
  * @param property 
  * The property to ensure the value has.
  */
-export function haveProperty<T>(property: keyof T, message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function haveProperty<T>(property: keyof T, message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => (candidate as any)[property] !== undefined,
     (candidate) => withDefaultMessage(
       `Expected ${candidate} to contain the property ${property}, but it did not`,
@@ -489,8 +475,8 @@ export function haveProperty<T>(property: keyof T, message?: string): Validation
  * @param max 
  * The inclusive maximum the value can be.
  */
-export function beInclusivelyBetween(min: number, max: number, message?: string): ValidationFunction<number> {
-  return makeValidatorContext(
+export function beInclusivelyBetween(min: number, max: number, message?: string): ValidatorFunction<number> {
+  return makeValidatorFunction(
     (candidate) => candidate >= min && candidate <= max,
     (candidate) => withDefaultMessage(
       `Expected a value inclusively between ${min} and ${max}, but found ${candidate}`,
@@ -509,8 +495,8 @@ export function beInclusivelyBetween(min: number, max: number, message?: string)
  * The exclusive maximum the value can be.
  * 
  */
-export function beExclusivelyBetween(min: number, max: number, message?: string): ValidationFunction<number> {
-  return makeValidatorContext(
+export function beExclusivelyBetween(min: number, max: number, message?: string): ValidatorFunction<number> {
+  return makeValidatorFunction(
     (candidate) => candidate > min && candidate < max,
     (candidate) => withDefaultMessage(
       `Expected a value exclusively between ${min} and ${max}, but found ${candidate}`,
@@ -524,8 +510,8 @@ export function beExclusivelyBetween(min: number, max: number, message?: string)
  * 
  * @alias not(nullOrEmpty())
  */
-export function beProvided<T>(message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function beProvided<T>(message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => value(candidate)
       .must(not(beNullOrEmpty()))
       .flatten(),
@@ -542,8 +528,8 @@ export function beProvided<T>(message?: string): ValidationFunction<T> {
  * @param elements 
  * The element array within which the value must be included.
  */
-export function beIncludedWithin<T>(value: IHasIncludes<T>, message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function beIncludedWithin<T>(value: IHasIncludes<T>, message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => value.includes(candidate),
     (candidate) => withDefaultMessage(
       `Expected value ${candidate} to be included within ${value} but it was not`,
@@ -558,8 +544,8 @@ export function beIncludedWithin<T>(value: IHasIncludes<T>, message?: string): V
  * @param elements 
  * The element array within which the value must be excluded.
  */
-export function beExcludedFrom<T>(test: IHasIncludes<T>, message?: string): ValidationFunction<T> {
-  return makeValidatorContext(
+export function beExcludedFrom<T>(test: IHasIncludes<T>, message?: string): ValidatorFunction<T> {
+  return makeValidatorFunction(
     (candidate) => value(candidate)
       .must(not(beIncludedWithin(test)))
       .flatten(),

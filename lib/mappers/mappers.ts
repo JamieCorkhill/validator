@@ -1,5 +1,8 @@
 import { IHasLength } from './../types'
 
+/**
+ * Maps Ts to Us.
+ */
 export type MapperFunction<T, U> = (candidate: T) => U
 
 /**
