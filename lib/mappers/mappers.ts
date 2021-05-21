@@ -1,4 +1,4 @@
-import { IHasLength } from './../types';
+import { IHasLength } from './../types'
 
 export type MapperFunction<T, U> = (candidate: T) => U
 

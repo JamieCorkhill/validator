@@ -84,3 +84,8 @@ function isNotStupidRule(password: string) {
   return password !== '123456'
 }
 ```
+
+
+```typescript
+valueFor('firstName').must(be(10, otherwise())))
+```

@@ -1,32 +1,45 @@
-import { ValidationFunction } from './validators';
+import { ValidationFunction } from './validators'
+import { Input } from './../main'
 
 /**
- * Negates the context. The result of passed validators will be flipped such that
+ * Lazily negates the context. The result of passed validators will be lazily flipped such that
  * the inverse of the provided validators will pass.
  */
-export function not<T>(...validators: ValidationFunction<T>[]): ValidationFunction<T> {
-  return (candidate) => validators
-    .map(v => v(candidate))
-    .map(x => !x)
-    .every(x => x === true)
+export function not<T>(...validators: ValidationFunction<T>[]): ValidationFunction<T>[] {
+  function negate(validator: ValidationFunction<T>): ValidationFunction<T> {
+    return (candidate) => {
+      const validationResult = validator(candidate)
+      return {
+        ...validationResult,
+        satisfiesCondition: !validationResult.satisfiesCondition
+      }
+    }
+  }
+
+  return validators
+    .map(negate)
 }
 
 /**
  * Maps a value, permitting you to perform validation operations on the mapped value
- * within in the calling context of this function.
+ * within the calling context of this function.
  * 
  * @param map 
  * A mapping function
  */
 export function andWhenMapped<T, U>(
-  map: (t: T) => U,
-  ...validators: ValidationFunction<U>[]
-): ValidationFunction<T> {
-  return (candidate) => {
-    const mapped = map(candidate)
-
-    return validators
-      .map(v => v(mapped))
-      .every(x => x === true)
+  mapCandidate: (t: T) => U,
+  ...validators: Input<U>[]
+): ValidationFunction<T>[] {
+  function wrap(validator: ValidationFunction<U>): ValidationFunction<T> {
+    return (candidate: T) => {
+      const mapped = mapCandidate(candidate)
+      return validator(mapped)
+    }
   }
+
+  return validators
+    .map(v => Array.isArray(v) ? v.map(wrap) : wrap(v))
+    .flat()
 }
+

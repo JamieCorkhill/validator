@@ -16,3 +16,10 @@ export interface IHasLength {
  | 'undefined'
  | 'symbol'
  | 'number'
+
+/**
+ * A structure for which you can assert on whether an element is included.
+ */
+export interface IHasIncludes<T> {
+  includes(value: T): boolean
+}

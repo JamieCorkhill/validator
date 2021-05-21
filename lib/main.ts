@@ -1,4 +1,4 @@
-import { ValidationFunction } from './validation/validators'
+import { IValidatorContext, ValidationFunction } from './validation/validators'
 
 export interface IIndividualValidationResult<T> {
   actualValue: T
@@ -6,16 +6,18 @@ export interface IIndividualValidationResult<T> {
   failureMessage: string
 }
 
+export type Input<T> = Array<ValidationFunction<T>> | ValidationFunction<T>
+
 /**
  * A `Must` function - a variadic function that accepts validators.
  */
-export type MustFunction<T> = (...validators: ValidationFunction<T>[]) => IMustContext
+export type MustFunction<T> = (...validators: Input<T>[]) => IMustContext
 
 /**
  * 
  */
 interface IMustContext {
-  flatten(): boolean
+  flatten(): IValidatorContext
 }
 
 /**
@@ -36,7 +38,7 @@ export function createValidationContext<T>() {
     },
 
     validate: (toValidate: T) => {
-      let results: boolean[] = []
+      let results: IValidatorContext[] = []
 
       for (const [property, validators] of propertyValidators) {
         const candidate = toValidate[property]
@@ -46,18 +48,18 @@ export function createValidationContext<T>() {
       
       }
 
-      return results.every(r => r == true)
+      return results.every(r => r.satisfiesCondition)
     }
   }
 }
 
 function makeMustFunction<T>(candidate: T, candidateName?: string) {
-  return (...validators: ValidationFunction<T>[]) => {
+  return (...validators: Input<T>[]) => {
     const result = validators.map(v => v(candidate))
 
     return {
       flatten() {
-        return result.every(r => r === true)
+        return true
       }
     }
   }
