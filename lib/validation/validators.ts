@@ -194,7 +194,7 @@ export function haveLength<T extends IHasLength>(expectedLength: number): Valida
         haveProperty('length'),
         andWhenMapped(
           toLength(),
-          be(5)
+          be(expectedLength)
         )
       )
       .flatten(),
