@@ -29,7 +29,7 @@ export function not<T>(...validators: ValidatorFunction<T>[]): ValidatorFunction
  */
 export function whenMapped<T, U>(
   mapCandidate: (t: T) => U,
-  ...validators: ValidatorFunctions<U>[]
+  ...validators: ValidatorFunctions<U>
 ): ValidatorFunction<T>[] {
   function wrap(validator: ValidatorFunction<U>): ValidatorFunction<T> {
     return (candidate: T) => {
@@ -54,7 +54,7 @@ export function whenMapped<T, U>(
  */
 export function andWhenMapped<T, U>(
   mapCandidate: (t: T) => U,
-  ...validators: ValidatorFunctions<U>[]
+  ...validators: ValidatorFunctions<U>
 ): ValidatorFunction<T>[] {
   return whenMapped(mapCandidate, ...validators)
 }
